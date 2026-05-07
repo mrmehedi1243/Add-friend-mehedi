@@ -4,61 +4,198 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 import urllib3
 import time
+import binascii
+
+import my_pb2
+import output_pb2
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 app = Flask(__name__)
 
-# =========================
+# ============================================
+# CREDIT
+# ============================================
+CREDIT = "http://t.me/proxaura"
+
+# ============================================
 # JWT CACHE
-# =========================
+# ============================================
 jwt_cache = {}
 
-# =========================
-# LOGIN API
-# =========================
-LOGIN_API = "http://vk-jwt-personal.vercel.app/guest_to_jwt?uid={uid}&password={password}"
+# ============================================
+# AES CONFIG
+# ============================================
+AES_KEY = b'Yg&tc%DEuh6%Zc^8'
+AES_IV = b'6oyZDr22E3ychjM%'
 
-# =========================
-# GET JWT TOKEN
-# =========================
+# ============================================
+# ENCRYPT MESSAGE
+# ============================================
+def encrypt_message(plaintext):
+
+    cipher = AES.new(AES_KEY, AES.MODE_CBC, AES_IV)
+
+    padded_message = pad(plaintext, AES.block_size)
+
+    return cipher.encrypt(padded_message)
+
+# ============================================
+# GET ACCESS TOKEN + OPEN_ID
+# ============================================
+def get_access_token(uid, password):
+
+    oauth_url = "https://100067.connect.garena.com/oauth/guest/token/grant"
+
+    payload = {
+        'uid': uid,
+        'password': password,
+        'response_type': "token",
+        'client_type': "2",
+        'client_secret': "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3",
+        'client_id': "100067"
+    }
+
+    headers = {
+        'User-Agent': "GarenaMSDK/4.0.19P9(SM-M526B ;Android 13;pt;BR;)",
+        'Connection': "Keep-Alive",
+        'Accept-Encoding': "gzip"
+    }
+
+    try:
+
+        response = requests.post(
+            oauth_url,
+            data=payload,
+            headers=headers,
+            timeout=10
+        )
+
+        if response.status_code != 200:
+            return None, None
+
+        data = response.json()
+
+        access_token = data.get("access_token")
+        open_id = data.get("open_id")
+
+        return access_token, open_id
+
+    except Exception:
+        return None, None
+
+# ============================================
+# GENERATE JWT
+# ============================================
 def get_jwt(uid, password):
-    key = f"{uid}:{password}"
 
-    if key in jwt_cache:
-        cached = jwt_cache[key]
+    cache_key = f"{uid}:{password}"
+
+    # CACHE
+    if cache_key in jwt_cache:
+
+        cached = jwt_cache[cache_key]
+
         if time.time() - cached["time"] < 3600:
             return cached["token"]
 
-    try:
-        url = LOGIN_API.format(uid=uid, password=password)
-        res = requests.get(url, timeout=10)
+    access_token, open_id = get_access_token(uid, password)
 
-        if res.status_code != 200:
-            return None
-
-        data = res.json()
-
-        token = data.get("jwt_token") or data.get("access_token")
-
-        if not token:
-            return None
-
-        jwt_cache[key] = {
-            "token": token,
-            "time": time.time()
-        }
-
-        return token
-
-    except Exception:
+    if not access_token or not open_id:
         return None
 
+    platforms = [8, 3, 4, 6]
 
-# =========================
+    for platform_type in platforms:
+
+        try:
+
+            game_data = my_pb2.GameData()
+
+            game_data.timestamp = "2024-12-05 18:15:32"
+            game_data.game_name = "free fire"
+            game_data.game_version = 1
+            game_data.version_code = "1.108.3"
+            game_data.os_info = "Android OS 9"
+            game_data.device_type = "Handheld"
+            game_data.network_provider = "Verizon"
+            game_data.connection_type = "WIFI"
+            game_data.screen_width = 1280
+            game_data.screen_height = 960
+            game_data.dpi = "240"
+            game_data.cpu_info = "ARMv7"
+            game_data.total_ram = 5951
+            game_data.gpu_name = "Adreno"
+            game_data.gpu_version = "OpenGL ES 3.0"
+            game_data.user_id = "Google"
+            game_data.ip_address = "172.190.111.97"
+            game_data.language = "en"
+
+            game_data.open_id = open_id
+            game_data.access_token = access_token
+            game_data.platform_type = platform_type
+            game_data.field_99 = str(platform_type)
+            game_data.field_100 = str(platform_type)
+
+            serialized_data = game_data.SerializeToString()
+
+            encrypted_data = encrypt_message(serialized_data)
+
+            hex_data = binascii.hexlify(encrypted_data).decode()
+
+            login_url = "https://loginbp.ggblueshark.com/MajorLogin"
+
+            headers = {
+                "User-Agent": "Dalvik/2.1.0",
+                "Connection": "Keep-Alive",
+                "Accept-Encoding": "gzip",
+                "Content-Type": "application/octet-stream",
+                "X-Unity-Version": "2018.4.11f1",
+                "X-GA": "v1 1",
+                "ReleaseVersion": "OB53"
+            }
+
+            response = requests.post(
+                login_url,
+                data=bytes.fromhex(hex_data),
+                headers=headers,
+                verify=False,
+                timeout=10
+            )
+
+            if response.status_code != 200:
+                continue
+
+            example_msg = output_pb2.Garena_420()
+
+            example_msg.ParseFromString(response.content)
+
+            data_dict = {
+                field.name: getattr(example_msg, field.name)
+                for field in example_msg.DESCRIPTOR.fields
+            }
+
+            token = data_dict.get("token")
+
+            if token:
+
+                jwt_cache[cache_key] = {
+                    "token": token,
+                    "time": time.time()
+                }
+
+                return token
+
+        except Exception:
+            continue
+
+    return None
+
+# ============================================
 # UID ENCRYPTION
-# =========================
+# ============================================
 def Encrypt_ID(x):
+
     try:
         x = int(x)
     except:
@@ -89,25 +226,26 @@ def Encrypt_ID(x):
     x = x / 128
 
     if x > 128:
+
         x = x / 128
 
         if x > 128:
+
             x = x / 128
 
             if x > 128:
+
                 x = x / 128
 
                 strx = int(x)
+
                 y = (x - strx) * 128
-                stry = int(y)
 
-                z = (y - stry) * 128
-                strz = int(z)
+                z = (y - int(y)) * 128
 
-                n = (z - strz) * 128
-                strn = int(n)
+                n = (z - int(z)) * 128
 
-                m = (n - strn) * 128
+                m = (n - int(n)) * 128
 
                 return (
                     dec[int(m)] +
@@ -119,49 +257,110 @@ def Encrypt_ID(x):
 
     return ""
 
-
-# =========================
-# AES ENCRYPTION
-# =========================
+# ============================================
+# FRIEND PAYLOAD ENCRYPT
+# ============================================
 def encrypt_api(plain_text):
+
     try:
         plain_text = bytes.fromhex(plain_text)
     except:
         return ""
 
-    key = bytes([89,103,38,116,99,37,68,69,117,104,54,37,90,99,94,56])
-    iv  = bytes([54,111,121,90,68,114,50,50,69,51,121,99,104,106,77,37])
+    key = bytes([
+        89,103,38,116,99,37,68,69,
+        117,104,54,37,90,99,94,56
+    ])
+
+    iv = bytes([
+        54,111,121,90,68,114,50,50,
+        69,51,121,99,104,106,77,37
+    ])
 
     cipher = AES.new(key, AES.MODE_CBC, iv)
-    cipher_text = cipher.encrypt(pad(plain_text, AES.block_size))
+
+    cipher_text = cipher.encrypt(
+        pad(plain_text, AES.block_size)
+    )
 
     return cipher_text.hex()
 
-
-# =========================
-# MAIN API
-# =========================
+# ============================================
+# HOME PAGE
+# ============================================
 @app.route("/", methods=["GET"])
-def friend_action():
+def home():
+
+    return jsonify({
+
+        "status": "online",
+
+        "credit": CREDIT,
+
+        "endpoints": {
+
+            "add_friend":
+            "/add_friend?uid=123456&password=YOUR_PASSWORD&friend_uid=999999",
+
+            "remove_friend":
+            "/remove_friend?uid=123456&password=YOUR_PASSWORD&friend_uid=999999"
+
+        }
+
+    })
+
+# ============================================
+# ADD FRIEND
+# ============================================
+@app.route("/add_friend", methods=["GET"])
+def add_friend():
+
+    return handle_friend_action("add")
+
+# ============================================
+# REMOVE FRIEND
+# ============================================
+@app.route("/remove_friend", methods=["GET"])
+def remove_friend():
+
+    return handle_friend_action("remove")
+
+# ============================================
+# MAIN FRIEND FUNCTION
+# ============================================
+def handle_friend_action(action):
 
     uid = request.args.get("uid")
+
     password = request.args.get("password")
-    player_uid = request.args.get("player_uid")
-    action = request.args.get("action")
+
+    friend_uid = request.args.get("friend_uid")
 
     if not uid or not password:
-        return jsonify({"success": False, "message": "uid and password required"}), 400
 
-    if not player_uid:
-        return jsonify({"success": False, "message": "player_uid required"}), 400
+        return jsonify({
+            "success": False,
+            "credit": CREDIT,
+            "message": "uid and password required"
+        }), 400
 
-    if action not in ["add", "remove"]:
-        return jsonify({"success": False, "message": "action must be add/remove"}), 400
+    if not friend_uid:
+
+        return jsonify({
+            "success": False,
+            "credit": CREDIT,
+            "message": "friend_uid required"
+        }), 400
 
     token = get_jwt(uid, password)
 
     if not token:
-        return jsonify({"success": False, "message": "Login failed / JWT not found"}), 401
+
+        return jsonify({
+            "success": False,
+            "credit": CREDIT,
+            "message": "JWT generation failed"
+        }), 401
 
     url = (
         "https://clientbp.ggpolarbear.com/RequestAddingFriend"
@@ -179,21 +378,32 @@ def friend_action():
         "Accept": "*/*"
     }
 
-    encrypted_uid = Encrypt_ID(player_uid)
+    encrypted_uid = Encrypt_ID(friend_uid)
 
     if not encrypted_uid:
-        return jsonify({"success": False, "message": "UID encryption failed"}), 400
+
+        return jsonify({
+            "success": False,
+            "credit": CREDIT,
+            "message": "UID encryption failed"
+        }), 400
 
     data0 = "08c8b5cfea1810" + encrypted_uid + "18012008"
+
     encrypted_payload = encrypt_api(data0)
 
     if not encrypted_payload:
-        return jsonify({"success": False, "message": "Payload encryption failed"}), 500
+
+        return jsonify({
+            "success": False,
+            "credit": CREDIT,
+            "message": "Payload encryption failed"
+        }), 500
 
     payload = bytes.fromhex(encrypted_payload)
 
-    # ✅ FIXED INDENTATION START HERE
     try:
+
         response = requests.post(
             url,
             headers=headers,
@@ -202,36 +412,63 @@ def friend_action():
             timeout=10
         )
 
-        text = response.text.upper()
-
         if action == "add":
+
             if response.status_code == 200:
                 message = "Friend added successfully"
-            elif "DUPLICATE" in text:
-                message = "Already friend"
             else:
-                message = "Friend add success"
+                message = "Friend add failed"
+
         else:
+
             if response.status_code == 200:
                 message = "Friend removed successfully"
             else:
-                message = "Friend remove success"
+                message = "Friend remove failed"
 
         return jsonify({
-            "success": "successfully" in message,
-            "message": message
+
+            "success": response.status_code == 200,
+
+            "credit": CREDIT,
+
+            "action": action,
+
+            "friend_uid": friend_uid,
+
+            "message": message,
+
+            "status_code": response.status_code
+
         })
 
     except Exception as e:
+
         return jsonify({
+
             "success": False,
+
+            "credit": CREDIT,
+
             "message": str(e)
+
         }), 500
 
-
-# =========================
-# RUN SERVER
-# =========================
+# ============================================
+# START SERVER
+# ============================================
 if __name__ == "__main__":
-    print("SERVER STARTED")
-    app.run(host="0.0.0.0", port=5000, debug=False)
+
+    print("===================================")
+    print("      FRIEND API STARTED")
+    print("===================================")
+    print("CREDIT :", CREDIT)
+    print("ADD    : /add_friend")
+    print("REMOVE : /remove_friend")
+    print("===================================")
+
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=False
+    )
