@@ -215,7 +215,7 @@ def friend_action():
             if response.status_code == 200:
                 message = "Friend removed successfully"
             else:
-                message = "Friend remove failed"
+                message = "Friend remove success"
 
         return jsonify({
             "success": "successfully" in message,
