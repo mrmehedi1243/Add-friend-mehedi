@@ -210,7 +210,7 @@ def friend_action():
             elif "DUPLICATE" in text:
                 message = "Already friend"
             else:
-                message = "Friend add failed"
+                message = "Friend add success"
         else:
             if response.status_code == 200:
                 message = "Friend removed successfully"
