@@ -57,11 +57,12 @@ def get_access_token(uid, password):
     }
 
     headers = {
-        'User-Agent': "GarenaMSDK/4.0.19P9(SM-M526B ;Android 13;pt;BR;)",
-        'Connection': "Keep-Alive",
-        'Accept-Encoding': "gzip"
+        "Host": "100067.connect.garena.com",
+        "User-Agent": await Ua(),
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "close",
     }
-
     try:
 
         response = requests.post(
