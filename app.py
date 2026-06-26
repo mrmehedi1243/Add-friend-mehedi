@@ -404,7 +404,6 @@ def handle_friend_action(action):
     payload = bytes.fromhex(encrypted_payload)
 
     try:
-
         response = requests.post(
             url,
             headers=headers,
@@ -413,48 +412,36 @@ def handle_friend_action(action):
             timeout=10
         )
 
-        if action == "add":
+        print("Status:", response.status_code)
+        print("Text:", response.text)
+        print("Hex:", response.content.hex())
 
+        if action == "add":
             if response.status_code == 200:
                 message = "Friend added successfully"
             else:
                 message = "Friend add failed"
-
         else:
-
             if response.status_code == 200:
                 message = "Friend removed successfully"
             else:
                 message = "Friend remove failed"
 
         return jsonify({
-
             "success": response.status_code == 200,
-
             "credit": CREDIT,
-
             "action": action,
-
             "friend_uid": friend_uid,
-
             "message": message,
-
             "status_code": response.status_code
-
         })
 
     except Exception as e:
-
         return jsonify({
-
             "success": False,
-
             "credit": CREDIT,
-
             "message": str(e)
-
         }), 500
-
 # ============================================
 # START SERVER
 # ============================================
