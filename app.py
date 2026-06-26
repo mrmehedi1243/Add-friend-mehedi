@@ -143,17 +143,18 @@ def get_jwt(uid, password):
 
             hex_data = binascii.hexlify(encrypted_data).decode()
 
-            login_url = "https://loginbp.ggblueshark.com/MajorLogin"
+            login_url = "https://loginbp.ggpolarbear.com/MajorLogin"
 
             headers = {
-                "User-Agent": "Dalvik/2.1.0",
-                "Connection": "Keep-Alive",
-                "Accept-Encoding": "gzip",
-                "Content-Type": "application/octet-stream",
-                "X-Unity-Version": "2018.4.11f1",
-                "X-GA": "v1 1",
-                "ReleaseVersion": "OB53"
-            }
+    'User-Agent': Uaa(),
+    'Connection': "Keep-Alive",
+    'Accept-Encoding': "gzip",
+    'Content-Type': "application/x-www-form-urlencoded",
+    'Expect': "100-continue",
+    'X-Unity-Version': "2018.4.11f1",
+    'X-GA': "v1 1",
+    'ReleaseVersion': "ob54",
+}
 
             response = requests.post(
                 login_url,
