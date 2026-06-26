@@ -57,12 +57,11 @@ def get_access_token(uid, password):
     }
 
     headers = {
-        "Host": "100067.connect.garena.com",
-        "User-Agent": await Ua(),
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "close",
+        'User-Agent': "GarenaMSDK/4.0.19P9(SM-M526B ;Android 13;pt;BR;)",
+        'Connection': "Keep-Alive",
+        'Accept-Encoding': "gzip"
     }
+
     try:
 
         response = requests.post(
@@ -147,14 +146,13 @@ def get_jwt(uid, password):
             login_url = "https://loginbp.ggpolarbear.com/MajorLogin"
 
             headers = {
-    'User-Agent': Uaa(),
-    'Connection': "Keep-Alive",
-    'Accept-Encoding': "gzip",
-    'Content-Type': "application/x-www-form-urlencoded",
-    'Expect': "100-continue",
-    'X-Unity-Version': "2018.4.11f1",
-    'X-GA': "v1 1",
-    'ReleaseVersion': "ob54",
+    "User-Agent": "GarenaMSDK/4.0.19P9(Android 13)",
+    "Connection": "Keep-Alive",
+    "Accept-Encoding": "gzip",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "X-Unity-Version": "2018.4.11f1",
+    "X-GA": "v1 1",
+    "ReleaseVersion": "ob54",
 }
 
             response = requests.post(
