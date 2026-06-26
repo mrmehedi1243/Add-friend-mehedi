@@ -152,7 +152,7 @@ def get_jwt(uid, password):
     "Content-Type": "application/x-www-form-urlencoded",
     "X-Unity-Version": "2018.4.11f1",
     "X-GA": "v1 1",
-    "ReleaseVersion": "ob54",
+    "ReleaseVersion": "OB54",
 }
 
             response = requests.post(
@@ -369,13 +369,14 @@ def handle_friend_action(action):
     )
 
     headers = {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "X-GA": "v1 1",
-        "ReleaseVersion": "OB51",
-        "Host": "clientbp.common.ggbluefox.com",
-        "User-Agent": "Free Fire/2019117061",
-        "Authorization": f"Bearer {token}",
-        "Accept": "*/*"
+        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 10; V2065A Build/QP1A.190711.020)',
+        'Connection': 'Keep-Alive',
+        'Accept-Encoding': 'gzip',
+        'Authorization': f'Bearer {token}',
+        'X-Unity-Version': '2018.4.11f1',
+        'X-GA': 'v1 1',
+        'ReleaseVersion': 'OB54',
+        'Content-Type': 'application/x-www-form-urlencoded'
     }
 
     encrypted_uid = Encrypt_ID(friend_uid)
