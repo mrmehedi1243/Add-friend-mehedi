@@ -369,15 +369,15 @@ def handle_friend_action(action):
     )
 
     headers = {
-        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 10; V2065A Build/QP1A.190711.020)',
-        'Connection': 'Keep-Alive',
-        'Accept-Encoding': 'gzip',
-        'Authorization': f'Bearer {token}',
-        'X-Unity-Version': '2018.4.11f1',
-        'X-GA': 'v1 1',
-        'ReleaseVersion': 'OB54',
-        'Content-Type': 'application/x-www-form-urlencoded'
-    }
+            "User-Agent": "fadai/1.0 (Linux; Android 13; SM-S918B Build/TP1A.220.624.014)",
+            'Connection': "Keep-Alive",
+            'Accept-Encoding': "gzip",
+            'Authorization': f"Bearer {token}",
+            'Content-Type': "application/x-www-form-urlencoded",
+            'X-Unity-Version': "2018.4.11f1",
+            'X-GA': "v1 1",
+            'ReleaseVersion': "OB54"
+        }
 
     encrypted_uid = Encrypt_ID(friend_uid)
 
